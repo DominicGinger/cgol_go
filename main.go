@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-const size = 32
+const size = 50
 
-type Cell struct {
+type cell struct {
 	populated  bool
 	neighbours int
 }
 
-func setupGrid(grid *[size][size]Cell) {
+func setupGrid(grid *[size][size]cell) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
@@ -28,24 +28,24 @@ func setupGrid(grid *[size][size]Cell) {
 	}
 }
 
-func checkCoordinates(x int, y int, grid [size][size]Cell) int {
+func checkCoordinates(x int, y int, grid [size][size]cell) int {
 	if x > 0 && y > 0 && x < (size-1) && y < (size-1) && grid[x][y].populated {
 		return 1
 	}
 	return 0
 }
 
-func countNeighbours(x int, y int, grid [size][size]Cell) int {
+func countNeighbours(x int, y int, grid [size][size]cell) int {
 	count := 0
 	xCo := []int{-1, 1, 0, 0, -1, -1, 1, 1}
 	yCo := []int{0, 0, -1, 1, -1, 1, -1, 1}
-	for i, _ := range xCo {
+	for i := range xCo {
 		count += checkCoordinates(x+xCo[i], y+yCo[i], grid)
 	}
 	return count
 }
 
-func updateNeighbours(grid *[size][size]Cell) {
+func updateNeighbours(grid *[size][size]cell) {
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
 			grid[i][j].neighbours = countNeighbours(i, j, *grid)
@@ -53,23 +53,21 @@ func updateNeighbours(grid *[size][size]Cell) {
 	}
 }
 
-func updateGrid(grid *[size][size]Cell) {
+func updateGrid(grid *[size][size]cell) {
 	for i := 0; i < size; i++ {
 		for j, v := range grid[i] {
 			n := v.neighbours
 			switch {
-			case n == 0 || n == 1 || n == 4 || n == 5 || n == 6 || n == 7 || n == 8:
+			case n == 0 || n == 1 || n >= 4:
 				v.populated = false
 			case n == 3:
 				v.populated = true
-			case n == 2:
-				v.populated = v.populated
 			}
 			grid[i][j] = v
 			if v.populated {
 				fmt.Printf("%v ", "#")
 			} else {
-				fmt.Printf("%v ", "_")
+				fmt.Printf("%v ", " ")
 			}
 		}
 		fmt.Println()
@@ -83,7 +81,7 @@ func clearConsole() {
 }
 
 func main() {
-	grid := [size][size]Cell{}
+	grid := [size][size]cell{}
 	setupGrid(&grid)
 
 	for i := 0; i < 1000; i++ {
