@@ -10,22 +10,22 @@ import (
 
 const size = 50
 
+var displayChars = make(map[bool]string)
+
 type cell struct {
 	populated  bool
 	neighbours int
 }
 
-func setupGrid(grid *[size][size]cell) {
+func newGrid() *[size][size]cell {
+	grid := [size][size]cell{}
 	rand.Seed(time.Now().UTC().UnixNano())
 	for i := 0; i < size; i++ {
 		for j := 0; j < size; j++ {
-			if rand.Float32() > 0.5 {
-				grid[i][j].populated = true
-			} else {
-				grid[i][j].populated = false
-			}
+			grid[i][j].populated = rand.Float32() > 0.5
 		}
 	}
+	return &grid
 }
 
 func checkCoordinates(x int, y int, grid [size][size]cell) int {
@@ -53,25 +53,22 @@ func updateNeighbours(grid *[size][size]cell) {
 	}
 }
 
-func updateGrid(grid *[size][size]cell) {
+func updateGrid(grid *[size][size]cell, c chan string) {
+	str := ""
 	for i := 0; i < size; i++ {
 		for j, v := range grid[i] {
 			n := v.neighbours
-			switch {
-			case n == 0 || n == 1 || n >= 4:
+			if n < 2 || n >= 4 {
 				v.populated = false
-			case n == 3:
+			} else if n == 3 {
 				v.populated = true
 			}
 			grid[i][j] = v
-			if v.populated {
-				fmt.Printf("%v ", "#")
-			} else {
-				fmt.Printf("%v ", " ")
-			}
+			str += displayChars[v.populated]
 		}
-		fmt.Println()
+		str += "\n"
 	}
+	c <- str
 }
 
 func clearConsole() {
@@ -80,14 +77,24 @@ func clearConsole() {
 	cmd.Run()
 }
 
-func main() {
-	grid := [size][size]cell{}
-	setupGrid(&grid)
-
-	for i := 0; i < 1000; i++ {
+func run(grid *[size][size]cell, c chan string) {
+	for {
 		clearConsole()
-		updateNeighbours(&grid)
-		updateGrid(&grid)
-		time.Sleep(500 * time.Millisecond)
+		updateNeighbours(grid)
+		updateGrid(grid, c)
+		time.Sleep(300 * time.Millisecond)
+	}
+}
+
+func main() {
+	displayChars[true], displayChars[false] = " # ", "   "
+	c := make(chan string)
+	go run(newGrid(), c)
+
+	for {
+		select {
+		case v := <-c:
+			fmt.Println(v)
+		}
 	}
 }
